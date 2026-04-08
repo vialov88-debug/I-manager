@@ -13,9 +13,10 @@ jobs:
         with:
           python-version: '3.10'
           
-      - name: Install Flet
+      - name: Install Flet and Dependencies
         run: |
-          pip install flet
+          pip install --upgrade pip
+          pip install flet==0.21.2
           
       - name: Setup Java
         uses: actions/setup-java@v3
