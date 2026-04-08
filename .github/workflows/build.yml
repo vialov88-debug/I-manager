@@ -25,7 +25,7 @@ jobs:
 
       - name: Build Android APK
         run: |
-          flet build apk --yes --web-renderer html --target-platform android-arm64
+          flet build apk --web-renderer html --target-platform android-arm64
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
