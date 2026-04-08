@@ -25,10 +25,6 @@ jobs:
 
       - name: Build Android APK
         run: |
-          # --yes отвечает "да" на установку Flutter
-          # --verbose показывает детальный процесс
-          - name: Build Android APK
-        run: |
           flet build apk --yes --web-renderer html --target-platform android-arm64
           
       - name: Upload Artifact
