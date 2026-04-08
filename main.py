@@ -1,136 +1,85 @@
 import flet as ft
 import datetime
-import asyncio
 
-class ShowManager:
-    def __init__(self):
-        self.show_name = "New Show"
-        self.show_start_time = None
-        self.last_song_duration = 0
-        self.patch = []
-        self.notes = ""
-
-manager = ShowManager()
-
-async def main(page: ft.Page):
-    page.title = "Sound Engineer Organizer"
+def main(page: ft.Page):
+    page.title = "I-Manager Pro"
     page.theme_mode = ft.ThemeMode.DARK
-    page.padding = 20
+    page.padding = 10
     
-    # --- UI ЭЛЕМЕНТЫ ТАЙМЕРА ---
-    timer_display = ft.Text("00:00:00", size=70, weight="bold", color="white")
-    status_display = ft.Text("IDLE", size=20, color="gray")
-    
-    # --- ФУНКЦИЯ ОБНОВЛЕНИЯ ТАЙМЕРА ---
-    async def update_clock():
-        while True:
-            if manager.show_start_time:
-                now = datetime.datetime.now()
-                diff = manager.show_start_time - now
-                total_sec = diff.total_seconds()
-
-                if total_sec > 0:
-                    # Режим PRE-SHOW
-                    status_display.value = "PRE-SHOW"
-                    timer_display.color = "green" if total_sec > 300 else "yellow"
-                    
-                    # Триггеры уведомлений (простая проверка секунд)
-                    current_sec = int(total_sec)
-                    if current_sec == 900: # 15 min
-                        page.show_snack_bar(ft.SnackBar(ft.Text("MIC CHECK!"), open=True))
-                    if current_sec == 600: # 10 min
-                        page.show_snack_bar(ft.SnackBar(ft.Text("CALL THE CAST!"), open=True))
-                    if current_sec == manager.last_song_duration:
-                        page.show_snack_bar(ft.SnackBar(ft.Text("START LAST SONG!"), open=True))
-                else:
-                    # Режим SHOW (прямой отсчет)
-                    status_display.value = "SHOW IN PROGRESS"
-                    timer_display.color = "red"
-                    diff = now - manager.show_start_time
-
-                abs_sec = abs(int(diff.total_seconds()))
-                h, m, s = abs_sec // 3600, (abs_sec % 3600) // 60, abs_sec % 60
-                timer_display.value = f"{h:02d}:{m:02d}:{s:02d}"
-            
-            page.update()
-            await asyncio.sleep(1)
-
-    # --- ЭКРАН ПАТЧА ---
-    patch_grid = ft.GridView(expand=True, runs_count=3, max_extent=150, spacing=10)
-    
-    def add_channel(e):
-        ch_num = len(patch_grid.controls) + 1
-        patch_grid.controls.append(
-            ft.Container(
-                content=ft.Column([
-                    ft.Text(f"CH {ch_num}", size=12, weight="bold"),
-                    ft.TextField(border=ft.InputBorder.UNDERLINE, text_size=14, dense=True)
-                ]),
-                bgcolor=ft.colors.SURFACE_VARIANT, border_radius=10, padding=10
-            )
+    # Функция для создания карточки задачи в расписании
+    def tech_card(time, activity, venue, duties, tech_name, color):
+        return ft.Container(
+            content=ft.Column([
+                ft.Row([
+                    ft.Text(time, weight="bold", size=16, color=ft.colors.WHITE),
+                    ft.Text(tech_name, weight="bold", color=color),
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                ft.Text(f"📍 {venue}", size=12, color=ft.colors.GREY_400),
+                ft.Text(activity, size=18, weight="w500"),
+                ft.Text(f"🛠 {duties}", size=14, italic=True, color=ft.colors.BLUE_200),
+            ], spacing=5),
+            padding=15,
+            border_radius=10,
+            border=ft.border.all(1, color),
+            margin=ft.margin.only(bottom=10)
         )
-        page.update()
 
-    # --- ЭКРАН ЗАМЕТОК ---
-    notes_field = ft.TextField(label="Show Notes", multiline=True, min_lines=10, expand=True)
-
-    # --- НАВИГАЦИЯ ---
-    def on_nav_change(e):
-        idx = e.control.selected_index
-        tab_show.visible = (idx == 0)
-        tab_calendar.visible = (idx == 1)
-        tab_patch.visible = (idx == 2)
-        tab_notes.visible = (idx == 3)
-        page.update()
-
-    # Вьюхи
-    tab_show = ft.Column([
-        ft.Text(manager.show_name, size=25, weight="bold"),
-        status_display, timer_display
-    ], horizontal_alignment="center", visible=True)
-
-    tab_calendar = ft.Column([
-        ft.TextField(label="Show Name", id="name"),
-        ft.TextField(label="Start Time (HH:MM)", hint_text="21:00"),
-        ft.TextField(label="Last Song Duration (MM:SS)", hint_text="04:20"),
-        ft.ElevatedButton("Set Show", on_click=lambda _: save_show_data(tab_calendar))
+    # Вкладка Расписания (на основе твоего скрина)
+    schedule_view = ft.Column([
+        ft.Text("Stage Team Schedule", size=24, weight="bold"),
+        ft.Divider(),
+        ft.Tabs(
+            selected_index=0,
+            tabs=[
+                ft.Tab(text="Oleksandar", content=ft.Column([
+                    tech_card("15:45", "Port Talk", "Star Theater", "Setup & Run", "Oleksandar", ft.colors.BLUE),
+                    tech_card("19:15", "Duets", "Star Theater", "Setup & Run", "Oleksandar", ft.colors.BLUE),
+                ], scroll=ft.ScrollMode.ADAPTIVE)),
+                ft.Tab(text="Joson", content=ft.Column([
+                    tech_card("17:00", "Guitarist", "Explorer's Lounge", "Setup & Strike", "Joson", ft.colors.RED),
+                    tech_card("19:15", "Duets", "Star Theater", "Setup & Run", "Joson", ft.colors.RED),
+                ], scroll=ft.ScrollMode.ADAPTIVE)),
+                ft.Tab(text="Others", content=ft.Column([
+                    ft.Text("Important Phones:", weight="bold"),
+                    ft.ListTile(leading=ft.Icon(ft.icons.PHONE), title=ft.Text("Stage Manager: 2387")),
+                    ft.ListTile(leading=ft.Icon(ft.icons.PHONE), title=ft.Text("Sound Tech: 2193")),
+                    ft.ListTile(leading=ft.Icon(ft.icons.PHONE), title=ft.Text("Light Tech: 2192")),
+                ], scroll=ft.ScrollMode.ADAPTIVE)),
+            ],
+            expand=1
+        )
     ], visible=False)
 
-    def save_show_data(col):
-        try:
-            name = col.controls[0].value
-            t_str = col.controls[1].value
-            ls_str = col.controls[2].value
-            
-            t = datetime.datetime.strptime(t_str, "%H:%M")
-            manager.show_start_time = datetime.datetime.now().replace(hour=t.hour, minute=t.minute, second=0)
-            manager.show_name = name
-            
-            m, s = map(int, ls_str.split(":"))
-            manager.last_song_duration = m * 60 + s
-            
-            page.show_snack_bar(ft.SnackBar(ft.Text("Success! Mode Active."), open=True))
-        except:
-            page.show_snack_bar(ft.SnackBar(ft.Text("Error! Check formats."), open=True))
+    # Вкладка Live (Твой таймер)
+    live_view = ft.Column([
+        ft.Text("Live Production", size=24, weight="bold"),
+        ft.Container(
+            content=ft.Text("00:00:00", size=60, weight="bold", color=ft.colors.GREEN),
+            alignment=ft.alignment.center,
+            height=200,
+            border_radius=20,
+            bgcolor=ft.colors.BLACK38
+        ),
+        ft.Text("Current Task: Port Talk", size=20),
+        ft.ProgressBar(value=0.5, color="green")
+    ], visible=True)
 
-    tab_patch = ft.Column([
-        ft.Row([ft.Text("Patch", size=20), ft.IconButton(ft.icons.ADD, on_click=add_channel)]),
-        patch_grid
-    ], visible=False, expand=True)
-
-    tab_notes = ft.Column([notes_field], visible=False, expand=True)
+    # Навигация
+    def nav_change(e):
+        index = e.control.selected_index
+        live_view.visible = (index == 0)
+        schedule_view.visible = (index == 1)
+        page.update()
 
     page.navigation_bar = ft.NavigationBar(
         destinations=[
-            ft.NavigationDestination(icon=ft.icons.PLAY_ARROW, label="Live"),
-            ft.NavigationDestination(icon=ft.icons.CALENDAR_TODAY, label="Plan"),
-            ft.NavigationDestination(icon=ft.icons.CABLE, label="Patch"),
-            ft.NavigationDestination(icon=ft.icons.NOTES, label="Notes"),
+            ft.NavigationDestination(icon=ft.icons.PLAY_CIRCLE_OUTLINE, label="Live"),
+            ft.NavigationDestination(icon=ft.icons.CHRONO_OUTLINED, label="Schedule"),
+            ft.NavigationDestination(icon=ft.icons.SETTINGS, label="Settings"),
         ],
-        on_change=on_nav_change
+        on_change=nav_change
     )
 
-    page.add(ft.Column([tab_show, tab_calendar, tab_patch, tab_notes], expand=True))
-    await update_clock()
+    page.add(live_view, schedule_view)
 
 ft.app(target=main)
